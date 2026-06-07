@@ -95,6 +95,48 @@ http://127.0.0.1:8080/
 4. Press play.
 5. UI captures 32 frames, sends them to backend, then shows `Real` or `Fake` plus likely generator.
 
+## Run One Video From CLI
+
+```bash
+./.venv/bin/python scripts/predict_video.py path/to/video.mp4
+```
+
+Choose the second checkpoint:
+
+```bash
+./.venv/bin/python scripts/predict_video.py path/to/video.mp4 --model-id ffpp_celebdf
+```
+
+JSON output:
+
+```bash
+./.venv/bin/python scripts/predict_video.py path/to/video.mp4 --json
+```
+
+## Run A Folder From CLI
+
+```bash
+./.venv/bin/python scripts/batch_predict_video.py path/to/video_folder
+```
+
+Search subfolders too:
+
+```bash
+./.venv/bin/python scripts/batch_predict_video.py path/to/video_folder --recursive
+```
+
+Use the second checkpoint:
+
+```bash
+./.venv/bin/python scripts/batch_predict_video.py path/to/video_folder --model-id ffpp_celebdf
+```
+
+JSON output:
+
+```bash
+./.venv/bin/python scripts/batch_predict_video.py path/to/video_folder --json
+```
+
 ## Test
 
 ```bash
