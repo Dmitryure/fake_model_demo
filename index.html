@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Face Detect Video Inference</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f4f7f6;
+      color: #17211f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    main {
+      width: min(1040px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 18px;
+    }
+
+    .panel {
+      background: #ffffff;
+      border: 1px solid #d9e4e0;
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(23, 33, 31, 0.08);
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      font-weight: 700;
+    }
+
+    input[type="file"],
+    input[type="url"],
+    select {
+      width: 100%;
+      border: 1px solid #b7c8c2;
+      border-radius: 6px;
+      padding: 10px;
+      font: inherit;
+      background: #ffffff;
+    }
+
+    button {
+      width: fit-content;
+      border: 1px solid #0f766e;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font: inherit;
+      font-weight: 700;
+      background: #0f766e;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    video {
+      width: 100%;
+      max-height: 58vh;
+      background: #101918;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      min-height: 34px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #e6efeb;
+      color: #243d37;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .badge[data-kind="busy"] {
+      background: #fff2c8;
+      color: #624900;
+    }
+
+    .badge[data-kind="error"] {
+      background: #ffe1df;
+      color: #7a1711;
+    }
+
+    .badge[data-kind="done"] {
+      background: #dff6e7;
+      color: #14552b;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid #d9e4e0;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfdfc;
+      min-height: 76px;
+    }
+
+    .metric span {
+      display: block;
+      color: #536b64;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      overflow-wrap: anywhere;
+    }
+
+    pre {
+      margin: 0;
+      max-height: 360px;
+      overflow: auto;
+      border-radius: 8px;
+      padding: 14px;
+      background: #101918;
+      color: #eef7f3;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 16px;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel controls" aria-labelledby="title">
+      <h1 id="title">Video Inference</h1>
+      <label>
+        Video file
+        <input id="videoFile" type="file" accept="video/*">
+      </label>
+      <label>
+        Backend URL
+        <input id="backendUrl" type="url" value="http://127.0.0.1:8765/v1/predict_frames">
+      </label>
+      <label>
+        Model
+        <select id="modelSelect">
+          <option value="canonical_best">Canonical best</option>
+          <option value="ffpp_celebdf">FF++ + CelebDF</option>
+        </select>
+      </label>
+      <label>
+        Backend video
+        <select id="backendVideo">
+          <option value="">No backend videos loaded</option>
+        </select>
+      </label>
+      <button id="refreshBackendVideos" type="button">Refresh videos</button>
+    </section>
+
+    <section class="panel">
+      <video id="video" controls playsinline></video>
+    </section>
+
+    <section class="panel">
+      <div class="status-row">
+        <h2>Inference</h2>
+        <span id="statusBadge" class="badge">Waiting for video</span>
+        <span id="progressText"></span>
+      </div>
+    </section>
+
+    <section class="panel summary" aria-label="Inference summary">
+      <div class="metric">
+        <span>Label</span>
+        <strong id="labelValue">-</strong>
+      </div>
+      <div class="metric">
+        <span>Fake probability</span>
+        <strong id="fakeValue">-</strong>
+      </div>
+      <div class="metric">
+        <span>Real probability</span>
+        <strong id="realValue">-</strong>
+      </div>
+      <div class="metric">
+        <span>Confidence</span>
+        <strong id="confidenceValue">-</strong>
+      </div>
+      <div class="metric">
+        <span>Likely generator</span>
+        <strong id="generatorValue">-</strong>
+      </div>
+      <div class="metric">
+        <span>Model</span>
+        <strong id="modelValue">-</strong>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Backend Response</h2>
+      <pre id="responseJson">{}</pre>
+    </section>
+  </main>
+
+  <canvas id="captureCanvas" hidden></canvas>
+
+  <script>
+    const FRAME_COUNT = 32;
+    const SAMPLE_INTERVAL_MS = 90;
+    const JPEG_QUALITY = 0.9;
+    const BACKEND_TIMEOUT_MS = 180000;
+
+    const videoFileInput = document.getElementById("videoFile");
+    const backendUrlInput = document.getElementById("backendUrl");
+    const modelSelect = document.getElementById("modelSelect");
+    const backendVideoSelect = document.getElementById("backendVideo");
+    const refreshBackendVideosButton = document.getElementById("refreshBackendVideos");
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("captureCanvas");
+    const statusBadge = document.getElementById("statusBadge");
+    const progressText = document.getElementById("progressText");
+    const labelValue = document.getElementById("labelValue");
+    const fakeValue = document.getElementById("fakeValue");
+    const realValue = document.getElementById("realValue");
+    const confidenceValue = document.getElementById("confidenceValue");
+    const generatorValue = document.getElementById("generatorValue");
+    const modelValue = document.getElementById("modelValue");
+    const responseJson = document.getElementById("responseJson");
+
+    let objectUrl = "";
+    let activeRun = 0;
+    let availableModels = [];
+
+    function setStatus(message, kind) {
+      statusBadge.textContent = message;
+      statusBadge.dataset.kind = kind || "";
+    }
+
+    function setProgress(message) {
+      progressText.textContent = message;
+    }
+
+    function resetResult() {
+      labelValue.textContent = "-";
+      fakeValue.textContent = "-";
+      realValue.textContent = "-";
+      confidenceValue.textContent = "-";
+      generatorValue.textContent = "-";
+      modelValue.textContent = "-";
+      responseJson.textContent = "{}";
+    }
+
+    function backendBaseUrl() {
+      const url = new URL(backendUrlInput.value.trim());
+      return `${url.protocol}//${url.host}`;
+    }
+
+    function formatPercent(value) {
+      if (typeof value !== "number" || Number.isNaN(value)) return "-";
+      return `${(value * 100).toFixed(1)}%`;
+    }
+
+    function renderResult(payload) {
+      const debug = payload.debug || {};
+      const topGenerator = debug.generator && debug.generator.top_generator;
+      labelValue.textContent = payload.label || "-";
+      fakeValue.textContent = formatPercent(payload.fake_probability);
+      realValue.textContent = formatPercent(payload.real_probability);
+      confidenceValue.textContent = formatPercent(payload.confidence);
+      generatorValue.textContent = topGenerator
+        ? `${topGenerator.name} ${formatPercent(topGenerator.probability)}`
+        : "-";
+      modelValue.textContent = debug.model_name || selectedModelName();
+      responseJson.textContent = JSON.stringify(payload, null, 2);
+    }
+
+    function selectedModelName() {
+      const selected = availableModels.find((item) => item.id === modelSelect.value);
+      return selected ? selected.name : modelSelect.options[modelSelect.selectedIndex]?.textContent || "-";
+    }
+
+    function setModelOptions(models, loadedModelId) {
+      if (!Array.isArray(models) || !models.length) return;
+      const previous = modelSelect.value || loadedModelId;
+      availableModels = models;
+      modelSelect.replaceChildren(
+        ...models.map((item) => {
+          const option = document.createElement("option");
+          option.value = item.id;
+          option.textContent = item.name || item.id;
+          return option;
+        }),
+      );
+      if (models.some((item) => item.id === previous)) {
+        modelSelect.value = previous;
+      } else if (models.some((item) => item.id === loadedModelId)) {
+        modelSelect.value = loadedModelId;
+      }
+    }
+
+    async function refreshModels() {
+      try {
+        const response = await fetch(`${backendBaseUrl()}/health`);
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.detail || response.statusText);
+        }
+        const model = payload.model || {};
+        setModelOptions(model.available_models, model.model_id);
+      } catch (error) {
+        setStatus("Error", "error");
+        setProgress(error.message || String(error));
+      }
+    }
+
+    function loadSelectedVideo(file) {
+      activeRun += 1;
+      resetResult();
+      setProgress("");
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      video.removeAttribute("crossorigin");
+      video.src = objectUrl;
+      video.load();
+      setStatus("Ready", "");
+    }
+
+    function loadBackendVideo(relativeUrl) {
+      activeRun += 1;
+      resetResult();
+      setProgress("");
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = "";
+      }
+      video.crossOrigin = "anonymous";
+      video.src = `${backendBaseUrl()}${relativeUrl}`;
+      video.load();
+      setStatus("Ready", "");
+    }
+
+    function setBackendVideoOptions(videos) {
+      backendVideoSelect.replaceChildren();
+      if (!videos.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No backend videos found";
+        backendVideoSelect.append(option);
+        return;
+      }
+      videos.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.url;
+        option.textContent = item.name;
+        backendVideoSelect.append(option);
+      });
+      loadBackendVideo(videos[0].url);
+    }
+
+    async function refreshBackendVideos() {
+      refreshBackendVideosButton.disabled = true;
+      try {
+        const response = await fetch(`${backendBaseUrl()}/v1/videos`);
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.detail || response.statusText);
+        }
+        setBackendVideoOptions(Array.isArray(payload.videos) ? payload.videos : []);
+      } catch (error) {
+        setStatus("Error", "error");
+        setProgress(error.message || String(error));
+      } finally {
+        refreshBackendVideosButton.disabled = false;
+      }
+    }
+
+    function ensureDrawableVideo() {
+      if (!video.src) throw new Error("Choose a video file first.");
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        throw new Error("Video frame is not ready yet.");
+      }
+      if (!video.videoWidth || !video.videoHeight) {
+        throw new Error("Video dimensions are unavailable.");
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+      });
+    }
+
+    function canvasToJpegBlob() {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Frame capture failed."));
+            return;
+          }
+          resolve(blob);
+        }, "image/jpeg", JPEG_QUALITY);
+      });
+    }
+
+    async function captureFrameBlobs(runId) {
+      ensureDrawableVideo();
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("Could not create capture canvas.");
+
+      const frames = [];
+      for (let index = 0; index < FRAME_COUNT; index += 1) {
+        if (runId !== activeRun) throw new Error("Analysis cancelled.");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        frames.push(await canvasToJpegBlob());
+        setProgress(`Captured ${index + 1}/${FRAME_COUNT} frames`);
+        if (index < FRAME_COUNT - 1) await sleep(SAMPLE_INTERVAL_MS);
+      }
+      return frames;
+    }
+
+    function buildFrameFormData(blobs) {
+      const form = new FormData();
+      form.append("model_id", modelSelect.value || "canonical_best");
+      blobs.forEach((blob, index) => {
+        form.append("frames", blob, `frame-${index}.jpg`);
+      });
+      return form;
+    }
+
+    async function postFrames(url, blobs) {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), BACKEND_TIMEOUT_MS);
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          body: buildFrameFormData(blobs),
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          const detail = payload && payload.detail ? payload.detail : response.statusText;
+          throw new Error(`Backend error: ${detail}`);
+        }
+        return payload;
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          throw new Error("Backend analysis timed out after 180 seconds.");
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    }
+
+    async function analyzeVideoOnPlay() {
+      const runId = activeRun + 1;
+      activeRun = runId;
+      resetResult();
+      setStatus("Capturing", "busy");
+      setProgress("");
+      try {
+        const blobs = await captureFrameBlobs(runId);
+        setStatus("Sending", "busy");
+        setProgress("Waiting for backend response");
+        const payload = await postFrames(backendUrlInput.value.trim(), blobs);
+        if (runId !== activeRun) return;
+        renderResult(payload);
+        setStatus("Done", "done");
+        setProgress("");
+      } catch (error) {
+        if (runId !== activeRun) return;
+        setStatus("Error", "error");
+        setProgress(error.message || String(error));
+      }
+    }
+
+    videoFileInput.addEventListener("change", () => {
+      const file = videoFileInput.files && videoFileInput.files[0];
+      if (!file) return;
+      loadSelectedVideo(file);
+    });
+
+    backendVideoSelect.addEventListener("change", () => {
+      if (!backendVideoSelect.value) return;
+      loadBackendVideo(backendVideoSelect.value);
+    });
+
+    refreshBackendVideosButton.addEventListener("click", () => {
+      refreshModels();
+      refreshBackendVideos();
+    });
+
+    video.addEventListener("play", () => {
+      analyzeVideoOnPlay();
+    });
+
+    refreshModels();
+    refreshBackendVideos();
+  </script>
+</body>
+</html>
