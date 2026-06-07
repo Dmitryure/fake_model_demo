@@ -90,6 +90,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print machine-readable JSON.",
     )
+    parser.add_argument(
+        "--import-packages",
+        action="store_true",
+        help="Also import non-Torch packages. Slower; useful when package metadata is present but imports fail.",
+    )
     return parser.parse_args()
 
 
@@ -148,6 +153,14 @@ def package_check(distribution: str, import_name: str) -> Check:
         return Check("packages", distribution, FAIL, f"version={version}; import failed: {exc!r}")
     module_file = getattr(module, "__file__", "-")
     return Check("packages", distribution, OK, f"version={version}; import={import_name}; file={module_file}")
+
+
+def package_metadata_check(distribution: str) -> Check:
+    try:
+        version = importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return Check("packages", distribution, FAIL, "not installed")
+    return Check("packages", distribution, OK, f"version={version}")
 
 
 def torch_checks() -> list[Check]:
@@ -370,12 +383,21 @@ def video_checks(video_path: Path | None) -> list[Check]:
     return checks
 
 
-def collect_checks(video_path: Path | None) -> list[Check]:
+def package_checks(import_packages: bool) -> list[Check]:
+    if import_packages:
+        return [
+            package_check(distribution, import_name)
+            for distribution, import_name in PACKAGE_IMPORTS.items()
+        ]
+    return [package_metadata_check(distribution) for distribution in PACKAGE_IMPORTS]
+
+
+def collect_checks(video_path: Path | None, import_packages: bool) -> list[Check]:
     config, config_checks = load_yaml_config(INFERENCE_CONFIG_PATH)
     checks: list[Check] = []
     checks.extend(system_checks())
     checks.extend(env_checks())
-    checks.extend(package_check(distribution, import_name) for distribution, import_name in PACKAGE_IMPORTS.items())
+    checks.extend(package_checks(import_packages))
     checks.extend(torch_checks())
     checks.extend(runtime_checks())
     checks.extend(config_checks)
@@ -411,7 +433,7 @@ def print_text(checks: list[Check]) -> None:
 
 def main() -> int:
     args = parse_args()
-    checks = collect_checks(args.video)
+    checks = collect_checks(args.video, import_packages=args.import_packages)
     if args.json:
         print(json.dumps([check_to_dict(check) for check in checks], indent=2))
     else:
