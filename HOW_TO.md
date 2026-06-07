@@ -92,7 +92,7 @@ http://127.0.0.1:8080/
 1. Start backend.
 2. Open web UI.
 3. Choose a local video file, or put videos in `backend/videos/` and click `Refresh videos`.
-4. Press play.
+4. Click `Analyze video`.
 5. UI captures 32 frames, sends them to backend, then shows `Real` or `Fake` plus likely generator.
 
 ## Run One Video From CLI

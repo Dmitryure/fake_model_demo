@@ -48,7 +48,7 @@ Then open:
 http://127.0.0.1:8080/
 ```
 
-Choose a local video file or refresh backend videos, then play the video to run analysis.
+Choose a local video file or refresh backend videos, then click `Analyze video`.
 
 Supported models:
 
