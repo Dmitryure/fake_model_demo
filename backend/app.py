@@ -31,10 +31,13 @@ logger = logging.getLogger("best_run_detector")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("startup: loading model_id=%s", service.model_id)
     service.load()
+    logger.info("startup: model loaded metadata=%s", service.metadata())
     try:
         yield
     finally:
+        logger.info("shutdown: closing model service")
         service.close()
 
 

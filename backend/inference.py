@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import time
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -16,6 +17,9 @@ from .settings import (
     model_paths_for_id,
     resolve_runtime_asset_paths,
 )
+
+
+logger = logging.getLogger("best_run_detector")
 
 
 @dataclass(frozen=True)
@@ -68,30 +72,37 @@ class ReferenceModelService:
         self.paths = paths
         self.model_id = paths.model_id
         _ensure_runtime_import_path(self.paths)
+        logger.info("load: importing torch and runtime modules")
         import torch
         from pipeline import build_fusion_pipeline, load_pipeline_yaml
         from task_models.generator_multitask_classifier import (
             build_generator_multitask_classifier,
         )
 
+        logger.info("load: reading config path=%s", self.paths.config_path)
         config = load_pipeline_yaml(self.paths.config_path)
         config = resolve_runtime_asset_paths(config, self.paths.asset_root)
         config = choose_device(config)
+        logger.info("load: resolved device=%s modalities=%s", config.get("device"), config.get("modalities"))
         run_config = load_run_config(self.paths)
         self.generator_names = generator_names_from_run_config(run_config)
 
+        logger.info("load: building fusion pipeline")
         build_result = build_fusion_pipeline(config=config, modalities=tuple(config["modalities"]))
+        logger.info("load: building classifier head")
         model = build_generator_multitask_classifier(
             build_result.pipeline,
             dim=int(config["dim"]),
             num_generators=len(self.generator_names),
             head_config=config.get("head", {}),
         ).to(build_result.device)
+        logger.info("load: loading checkpoint path=%s", self.paths.checkpoint_path)
         state = torch.load(
             self.paths.checkpoint_path,
             map_location=build_result.device,
             weights_only=False,
         )
+        logger.info("load: applying checkpoint")
         model.load_state_dict(state)
         model.eval()
 
@@ -100,6 +111,7 @@ class ReferenceModelService:
         self.model = model
         self.load_warnings = tuple(str(item) for item in build_result.warnings)
         self.loaded_at = time.time()
+        logger.info("load: complete device=%s warnings=%s", self.device, self.load_warnings)
 
     def metadata(self) -> dict[str, Any]:
         return {
