@@ -13,6 +13,28 @@ Minimal steps for a fresh local checkout.
 
 This app imports model runtime code from `backend/reference_model`, resolves shared assets from `backend/assets`, and loads selected checkpoints from `backend/model_weights`.
 
+## Restore Model Files
+
+Heavy model files are intentionally ignored by git. Download or copy `model_files.zip` into the repo root, then unzip it:
+
+```bash
+unzip model_files.zip
+```
+
+After unzip, these paths must exist:
+
+```text
+backend/assets/checkpoints/mvit_v2_s-ae3be167.pth
+backend/assets/models/face_landmarker_v2_with_blendshapes.task
+backend/assets/models/depth-anything-v2-small-hf/config.json
+backend/assets/models/depth-anything-v2-small-hf/model.safetensors
+backend/assets/models/depth-anything-v2-small-hf/preprocessor_config.json
+backend/model_weights/canonical_best/best.pt
+backend/model_weights/canonical_best/run_config.json
+backend/model_weights/ffpp_celebdf/best.pt
+backend/model_weights/ffpp_celebdf/run_config.json
+```
+
 ## Install
 
 ```bash

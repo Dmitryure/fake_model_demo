@@ -5,4 +5,5 @@ __pycache__/
 backend/videos
 backend/assets/
 backend/model_weights
+model_files.zip
 venv
