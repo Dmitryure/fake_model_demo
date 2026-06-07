@@ -10,6 +10,7 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_ROOT = PROJECT_ROOT / "backend" / "reference_model"
+ASSET_ROOT = PROJECT_ROOT / "backend" / "assets"
 MODEL_WEIGHTS_DIR = PROJECT_ROOT / "backend" / "model_weights"
 INFERENCE_CONFIG_PATH = PROJECT_ROOT / "backend" / "inference_config.yaml"
 DEFAULT_MODEL_ID = "canonical_best"
@@ -32,6 +33,7 @@ class ModelPaths:
     model_id: str = DEFAULT_MODEL_ID
     display_name: str = "Canonical best"
     runtime_root: Path = RUNTIME_ROOT
+    asset_root: Path = ASSET_ROOT
     run_dir: Path = MODEL_WEIGHTS_DIR / "canonical_best"
     checkpoint_path: Path = MODEL_WEIGHTS_DIR / "canonical_best" / "best.pt"
     config_path: Path = INFERENCE_CONFIG_PATH
@@ -89,16 +91,16 @@ def generator_names_from_run_config(run_config: dict[str, Any]) -> tuple[str, ..
     return tuple(names)
 
 
-def _resolve_runtime_path(value: Any, runtime_root: Path) -> Any:
+def _resolve_asset_path(value: Any, asset_root: Path) -> Any:
     if value is None:
         return None
     path = Path(str(value))
     if path.is_absolute():
         return str(path)
-    return str(runtime_root / path)
+    return str(asset_root / path)
 
 
-def resolve_runtime_asset_paths(config: dict[str, Any], runtime_root: Path) -> dict[str, Any]:
+def resolve_runtime_asset_paths(config: dict[str, Any], asset_root: Path) -> dict[str, Any]:
     resolved = copy.deepcopy(config)
     for section_name, keys in {
         "rgb": ("checkpoint_path",),
@@ -111,7 +113,7 @@ def resolve_runtime_asset_paths(config: dict[str, Any], runtime_root: Path) -> d
             continue
         for key in keys:
             if key in section and section[key] is not None:
-                section[key] = _resolve_runtime_path(section[key], runtime_root)
+                section[key] = _resolve_asset_path(section[key], asset_root)
     return resolved
 
 

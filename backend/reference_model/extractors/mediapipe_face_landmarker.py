@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL_PATH = PROJECT_ROOT / "models" / "face_landmarker_v2_with_blendshapes.task"
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_MODEL_PATH = BACKEND_ROOT / "assets" / "models" / "face_landmarker_v2_with_blendshapes.task"
 DEFAULT_MODEL_CANDIDATES: tuple[Path, ...] = (
     DEFAULT_MODEL_PATH,
     Path("/models/face_landmarker_v2_with_blendshapes.task"),

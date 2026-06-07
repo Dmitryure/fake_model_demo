@@ -7,15 +7,16 @@ Minimal steps for a fresh local checkout.
 - Python 3.12 or close equivalent.
 - Local virtual environment for this repo.
 - CUDA-capable GPU for normal use. CPU mode is only for debugging.
-- Vendored runtime assets under `backend/reference_model/`.
+- Vendored runtime code under `backend/reference_model/`.
+- Shared model assets under `backend/assets/`.
 - Model checkpoints under `backend/model_weights/`.
 
-This app imports model runtime code from `backend/reference_model` and loads selected checkpoints from `backend/model_weights`.
+This app imports model runtime code from `backend/reference_model`, resolves shared assets from `backend/assets`, and loads selected checkpoints from `backend/model_weights`.
 
 ## Install
 
 ```bash
-cd /home/comp/face_detect_app
+cd path/to/face_detect_app
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 ```
@@ -49,7 +50,7 @@ FACE_DETECT_ALLOW_CPU=1 ./.venv/bin/python -m backend.main
 Direct file:
 
 ```text
-/home/comp/face_detect_app/index.html
+index.html
 ```
 
 Or local server:
@@ -83,4 +84,4 @@ http://127.0.0.1:8080/
 - `Config requires CUDA`: GPU/CUDA not visible. Fix CUDA or use CPU debug mode.
 - `Backend error`: check terminal running backend.
 - No backend videos: create `backend/videos/` and put `.mp4`, `.webm`, `.mov`, `.m4v`, or `.ogg` files there.
-- Missing model files: confirm `backend/reference_model` contains runtime assets, `backend/inference_config.yaml` exists, and `backend/model_weights/*` contains `best.pt` plus `run_config.json`.
+- Missing model files: confirm `backend/reference_model` contains runtime code, `backend/assets` contains shared model assets, `backend/inference_config.yaml` exists, and `backend/model_weights/*` contains `best.pt` plus `run_config.json`.

@@ -1,14 +1,14 @@
 # Best-Run Video Detector
 
 Local web UI plus FastAPI backend for video deepfake detection.
-The inference runtime and required local model assets are vendored under `backend/reference_model`.
+The inference runtime is vendored under `backend/reference_model`; shared model assets live under `backend/assets`.
 
 For fresh setup, see [HOW_TO.md](HOW_TO.md).
 
 ## Run Backend
 
 ```bash
-cd /home/comp/face_detect_app
+cd path/to/face_detect_app
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 ./.venv/bin/python -m backend.main
@@ -32,13 +32,13 @@ curl http://127.0.0.1:8765/health
 Open the local web UI directly:
 
 ```text
-/home/comp/face_detect_app/index.html
+index.html
 ```
 
 Or serve it over localhost:
 
 ```bash
-cd /home/comp/face_detect_app
+cd path/to/face_detect_app
 ./.venv/bin/python -m http.server 8080
 ```
 
@@ -60,6 +60,12 @@ Local copied weights live under:
 ```text
 backend/model_weights/canonical_best/best.pt
 backend/model_weights/ffpp_celebdf/best.pt
+```
+
+Shared runtime assets live under:
+
+```text
+backend/assets
 ```
 
 ## API

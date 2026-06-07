@@ -75,7 +75,7 @@ class ReferenceModelService:
         )
 
         config = load_pipeline_yaml(self.paths.config_path)
-        config = resolve_runtime_asset_paths(config, self.paths.runtime_root)
+        config = resolve_runtime_asset_paths(config, self.paths.asset_root)
         config = choose_device(config)
         run_config = load_run_config(self.paths)
         self.generator_names = generator_names_from_run_config(run_config)
@@ -113,6 +113,7 @@ class ReferenceModelService:
             "generator_names": list(self.generator_names),
             "paths": {
                 "runtime_root": str(self.paths.runtime_root),
+                "asset_root": str(self.paths.asset_root),
                 "run_dir": str(self.paths.run_dir),
                 "checkpoint": str(self.paths.checkpoint_path),
                 "config": str(self.paths.config_path),

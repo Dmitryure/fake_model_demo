@@ -3,5 +3,6 @@ __pycache__/
 .pytest_cache/
 *.pyc
 backend/videos
+backend/assets/
 backend/model_weights
 venv

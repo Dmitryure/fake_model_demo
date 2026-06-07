@@ -3,9 +3,10 @@
 Inference runtime is vendored under `backend/reference_model`.
 
 - Best-run checkpoint copies live under `backend/model_weights`.
-- Runtime feature extractors, modality branches, and local assets live under `backend/reference_model`.
+- Runtime feature extractors and modality branches live under `backend/reference_model`.
+- Shared model assets live under `backend/assets`.
 
-Backend resolves `backend/inference_config.yaml` asset paths against `backend/reference_model`,
+Backend resolves `backend/inference_config.yaml` asset paths against `backend/assets`,
 then loads runtime model code and selected checkpoint at startup.
 
 Input policy:
