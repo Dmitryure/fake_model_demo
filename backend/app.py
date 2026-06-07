@@ -14,6 +14,7 @@ from .preprocessing import decode_image_bytes, validate_frame_count
 from .settings import DEFAULT_MODEL_ID, EXPECTED_FRAME_COUNT, VIDEO_DIR
 from .videos import (
     NO_STORE_HEADERS,
+    ensure_video_dir,
     iter_video_bytes,
     list_video_files,
     parse_range_header,
@@ -23,6 +24,7 @@ from .videos import (
 )
 
 
+ensure_video_dir(VIDEO_DIR)
 service = ReferenceModelService()
 logger = logging.getLogger("best_run_detector")
 

@@ -31,6 +31,11 @@ def is_supported_video(path: Path) -> bool:
     return path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS
 
 
+def ensure_video_dir(video_dir: Path) -> Path:
+    video_dir.mkdir(parents=True, exist_ok=True)
+    return video_dir
+
+
 def list_video_files(
     video_dir: Path,
     route_prefix: str = "/v1/video_stream",
